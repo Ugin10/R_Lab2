@@ -1,0 +1,72 @@
+---
+title: "Lab2"
+author: "Evgenii Shragin"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+### Задание 1
+
+Используйте файл ExpImp.Rdata
+
+Напишите функцию, которая создает именованный список, такой что - именами элементов списка являются названия федеральных округов - элементами списка являются векторы, которые содержат те субъекты федерации, которые принадлежат соответствующему федеральному округу.
+
+```{r warning=FALSE}
+
+load('data/ExpImp.RData')
+
+regions_list <- function(data) {
+  
+  all_territories <- data[, 'Регион']
+  indexes <- 1:length(all_territories)
+  
+  mask_counties <- grepl('федеральный округ', all_territories)
+  county_indexes <- indexes[mask_counties]
+
+  counties <- data[mask_counties, 'Регион']
+  regions <- vector(mode='list', length=length(county_indexes))
+  names(regions) <- counties
+  for (i in 1:length(regions)) {
+    lower_bound <- county_indexes[i]
+    if (i < length(regions)) upper_bound <- county_indexes[i+1] else upper_bound <- length(indexes) + 1
+    data[(lower_bound + 1):(upper_bound - 1), 'Регион']
+    regions[[i]] <- data[(lower_bound + 1):(upper_bound - 1), 'Регион']
+  }
+  return(regions)
+}
+```
+
+```{r warning=FALSE}
+regions_list <- regions_list(ExpImp)
+print(regions_list)
+```
+
+### 16. Используйте файл outcome-of-care-measures.csv
+
+Напишите функцию, которая принимает на вход название города и допустимый диапазон смертности и выдает на выход список, в котором для каждого из трех заболеваний указаны названия тех больниц уровень смертности в которых не превышает указанный диапазон.
+
+```{r warning=FALSE}
+
+hospitals_list <- function(city, lower_bound_mort, upper_bound_mort) {
+  df <- read.csv('data/outcome-of-care-measures.csv')
+  df <- df[df$City == city, ]
+  
+  diseases <- c("Heart Attack", "Heart Failure", "Pneumonia")
+  HA <- df[df$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack <= upper_bound_mort, 'Hospital.Name']
+  HF <- df[df$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure <= upper_bound_mort, 'Hospital.Name']
+  Pn <- df[df$Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia <= upper_bound_mort, 'Hospital.Name']
+  
+  hospitals <- list(HA, HF, Pn)
+  names(hospitals) <- diseases
+  
+  return(hospitals)
+}
+```
+
+```{r}
+# пример
+LA_list <- hospitals_list('LOS ANGELES', 3.0, 15.0)
+print(LA_list)
+```
